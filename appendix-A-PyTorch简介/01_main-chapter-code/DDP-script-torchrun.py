@@ -1,9 +1,9 @@
 # Copyright (c) Sebastian Raschka under Apache License 2.0 (see LICENSE.txt).
-# Source for "Build a Large Language Model From Scratch"
+# 来源: "Build a Large Language Model From Scratch"
 #   - https://www.manning.com/books/build-a-large-language-model-from-scratch
-# Code: https://github.com/rasbt/LLMs-from-scratch
+# 代码: https://github.com/rasbt/LLMs-from-scratch
 
-# Appendix A: Introduction to PyTorch (Part 3)
+# 附录A：PyTorch简介（第3部分）
 
 import torch
 import torch.nn.functional as F
@@ -17,29 +17,29 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.distributed import init_process_group, destroy_process_group
 
 
-# NEW: function to initialize a distributed process group (1 process / GPU)
-# this allows communication among processes
+# 新增：初始化分布式进程组的函数（每个GPU一个进程）
+# 这使得进程之间可以通信
 def ddp_setup(rank, world_size):
     """
-    Arguments:
-        rank: a unique process ID
-        world_size: total number of processes in the group
+    参数:
+        rank: 唯一的进程ID
+        world_size: 组中的进程总数
     """
-    # Only set MASTER_ADDR and MASTER_PORT if not already defined by torchrun
+    # 仅在torchrun未定义MASTER_ADDR和MASTER_PORT时才进行设置
     if "MASTER_ADDR" not in os.environ:
         os.environ["MASTER_ADDR"] = "localhost"
     if "MASTER_PORT" not in os.environ:
         os.environ["MASTER_PORT"] = "12345"
 
-    # initialize process group
+    # 初始化进程组
     if platform.system() == "Windows":
-        # Disable libuv because PyTorch for Windows isn't built with support
+        # 禁用libuv，因为Windows版的PyTorch没有内置支持
         os.environ["USE_LIBUV"] = "0"
-        # Windows users may have to use "gloo" instead of "nccl" as backend
-        # gloo: Facebook Collective Communication Library
+        # Windows用户可能需要使用 "gloo" 而不是 "nccl" 作为后端
+        # gloo: Facebook集体通信库
         init_process_group(backend="gloo", rank=rank, world_size=world_size)
     else:
-        # nccl: NVIDIA Collective Communication Library
+        # nccl: NVIDIA集体通信库
         init_process_group(backend="nccl", rank=rank, world_size=world_size)
 
     torch.cuda.set_device(rank)
@@ -97,7 +97,7 @@ def prepare_dataset():
     ])
     y_test = torch.tensor([0, 1])
 
-    # Uncomment these lines to increase the dataset size to run this script on up to 8 GPUs:
+    # 如果要在最多8个GPU上运行此脚本，请取消注释以下行以增加数据集大小：
     # factor = 4
     # X_train = torch.cat([X_train + torch.randn_like(X_train) * 0.1 for _ in range(factor)])
     # y_train = y_train.repeat(factor)
@@ -110,11 +110,11 @@ def prepare_dataset():
     train_loader = DataLoader(
         dataset=train_ds,
         batch_size=2,
-        shuffle=False,  # NEW: False because of DistributedSampler below
+        shuffle=False,  # 新增：由于下面的DistributedSampler，设置为False
         pin_memory=True,
         drop_last=True,
-        # NEW: chunk batches across GPUs without overlapping samples:
-        sampler=DistributedSampler(train_ds)  # NEW
+        # 新增：跨GPU对批次进行分块，样本不重叠：
+        sampler=DistributedSampler(train_ds)  # 新增
     )
     test_loader = DataLoader(
         dataset=test_ds,
@@ -124,35 +124,35 @@ def prepare_dataset():
     return train_loader, test_loader
 
 
-# NEW: wrapper
+# 新增：包装器
 def main(rank, world_size, num_epochs):
 
-    ddp_setup(rank, world_size)  # NEW: initialize process groups
+    ddp_setup(rank, world_size)  # 新增：初始化进程组
 
     train_loader, test_loader = prepare_dataset()
     model = NeuralNetwork(num_inputs=2, num_outputs=2)
     model.to(rank)
     optimizer = torch.optim.SGD(model.parameters(), lr=0.5)
 
-    model = DDP(model, device_ids=[rank])  # NEW: wrap model with DDP
-    # the core model is now accessible as model.module
+    model = DDP(model, device_ids=[rank])  # 新增：用DDP包装模型
+    # 核心模型现在可以通过 model.module 访问
 
     for epoch in range(num_epochs):
-        # NEW: Set sampler to ensure each epoch has a different shuffle order
+        # 新增：设置采样器以确保每个轮次都有不同的打乱顺序
         train_loader.sampler.set_epoch(epoch)
 
         model.train()
         for features, labels in train_loader:
 
-            features, labels = features.to(rank), labels.to(rank)  # New: use rank
+            features, labels = features.to(rank), labels.to(rank)  # 新增：使用rank
             logits = model(features)
-            loss = F.cross_entropy(logits, labels)  # Loss function
+            loss = F.cross_entropy(logits, labels)  # 损失函数
 
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
 
-            # LOGGING
+            # 日志记录
             print(f"[GPU{rank}] Epoch: {epoch+1:03d}/{num_epochs:03d}"
                   f" | Batchsize {labels.shape[0]:03d}"
                   f" | Train/Val Loss: {loss:.2f}")
@@ -166,16 +166,16 @@ def main(rank, world_size, num_epochs):
         print(f"[GPU{rank}] Test accuracy", test_acc)
 
     ####################################################
-    # NEW (not in the book):
+    # 新增（书中没有）：
     except ZeroDivisionError as e:
         raise ZeroDivisionError(
-            f"{e}\n\nThis script is designed for 2 GPUs. You can run it as:\n"
+            f"{e}\n\n此脚本设计用于2个GPU。您可以这样运行它：\n"
             "torchrun --nproc_per_node=2 DDP-script-torchrun.py\n"
-            f"Or, to run it on {torch.cuda.device_count()} GPUs, uncomment the code on lines 103 to 107."
+            f"或者，要在{torch.cuda.device_count()}个GPU上运行它，请取消注释第123到128行的代码。"
         )
     ####################################################
 
-    destroy_process_group()  # NEW: cleanly exit distributed mode
+    destroy_process_group()  # 新增：干净地退出分布式模式
 
 
 def compute_accuracy(model, dataloader, device):
@@ -196,7 +196,7 @@ def compute_accuracy(model, dataloader, device):
 
 
 if __name__ == "__main__":
-    # NEW: Use environment variables set by torchrun if available, otherwise default to single-process.
+    # 新增：如果torchrun已设置环境变量，则使用它们，否则默认为单进程。
     if "WORLD_SIZE" in os.environ:
         world_size = int(os.environ["WORLD_SIZE"])
     else:
@@ -209,7 +209,7 @@ if __name__ == "__main__":
     else:
         rank = 0
 
-    # Only print on rank 0 to avoid duplicate prints from each GPU process
+    # 仅在rank 0上打印，以避免每个GPU进程重复打印
     if rank == 0:
         print("PyTorch version:", torch.__version__)
         print("CUDA available:", torch.cuda.is_available())
