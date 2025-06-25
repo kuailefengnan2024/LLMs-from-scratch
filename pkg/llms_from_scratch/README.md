@@ -1,20 +1,20 @@
-# `llms-from-scratch` PyPI Package
+# `llms-from-scratch` PyPI 包
 
-This optional PyPI package lets you conveniently import code from various chapters of the *Build a Large Language Model From Scratch* book.
-
-&nbsp;
-## Installation
+这个可选的PyPI包让您可以方便地从*从零开始构建大型语言模型*一书的各个章节中导入代码。
 
 &nbsp;
-### From PyPI
+## 安装
 
-Install the `llms-from-scratch` package from the official [Python Package Index](https://pypi.org/project/llms-from-scratch/) (PyPI):
+&nbsp;
+### 从PyPI安装
+
+从官方[Python包索引](https://pypi.org/project/llms-from-scratch/) (PyPI)安装`llms-from-scratch`包：
 
 ```bash
 pip install llms-from-scratch
 ```
 
-> **Note:** If you're using [`uv`](https://github.com/astral-sh/uv), replace `pip` with `uv pip` or use `uv add`:
+> **注意：** 如果您正在使用[`uv`](https://github.com/astral-sh/uv)，请将`pip`替换为`uv pip`或使用`uv add`：
 
 ```bash
 uv add llms-from-scratch
@@ -23,9 +23,9 @@ uv add llms-from-scratch
 
 
 &nbsp;
-### Editable Install from GitHub
+### 从GitHub可编辑安装
 
-If you'd like to modify the code and have those changes reflected during development:
+如果您想要修改代码并在开发过程中反映这些更改：
 
 ```bash
 git clone https://github.com/rasbt/LLMs-from-scratch.git
@@ -33,7 +33,7 @@ cd LLMs-from-scratch
 pip install -e .
 ```
 
-> **Note:** With `uv`, use:
+> **注意：** 使用`uv`时：
 
 ```bash
 uv add --editable . --dev
@@ -42,9 +42,9 @@ uv add --editable . --dev
 
 
 &nbsp;
-## Using the Package
+## 使用包
 
-Once installed, you can import code from any chapter using:
+安装后，您可以使用以下方式从任何章节导入代码：
 
 ```python
 from llms_from_scratch.ch02 import GPTDatasetV1, create_dataloader_v1

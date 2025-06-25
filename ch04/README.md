@@ -1,22 +1,22 @@
-# Chapter 4: Implementing a GPT Model from Scratch to Generate Text
+# 第4章：从零开始实现GPT模型来生成文本
 
 &nbsp;
-## Main Chapter Code
+## 主要章节代码
 
-- [01_main-chapter-code](01_main-chapter-code) contains the main chapter code.
+- [01_main-chapter-code](01_main-chapter-code) 包含主要章节代码。
 
 &nbsp;
-## Bonus Materials
+## 奖励材料
 
-- [02_performance-analysis](02_performance-analysis) contains optional code analyzing the performance of the GPT model(s) implemented in the main chapter
-- [03_kv-cache](03_kv-cache) implements a KV cache to speed up the text generation during inference
-- [ch05/07_gpt_to_llama](../ch05/07_gpt_to_llama) contains a step-by-step guide for converting a GPT architecture implementation to Llama 3.2 and loads pretrained weights from Meta AI (it might be interesting to look at alternative architectures after completing chapter 4, but you can also save that for after reading chapter 5)
+- [02_performance-analysis](02_performance-analysis) 包含可选代码，分析主要章节中实现的GPT模型的性能
+- [03_kv-cache](03_kv-cache) 实现KV缓存以加速推理期间的文本生成
+- [ch05/07_gpt_to_llama](../ch05/07_gpt_to_llama) 包含将GPT架构实现转换为Llama 3.2的分步指南，并从Meta AI加载预训练权重（完成第4章后查看替代架构可能会很有趣，但您也可以在阅读第5章后再看）
 
 
 
-In the video below, I provide a code-along session that covers some of the chapter contents as supplementary material.
+在下面的视频中，我提供了一个编程演示会话，涵盖了一些章节内容作为补充材料。
 
 <br>
 <br>
 
-[![Link to the video](https://img.youtube.com/vi/YSAkgEarBGE/0.jpg)](https://www.youtube.com/watch?v=YSAkgEarBGE)
+[![视频链接](https://img.youtube.com/vi/YSAkgEarBGE/0.jpg)](https://www.youtube.com/watch?v=YSAkgEarBGE)

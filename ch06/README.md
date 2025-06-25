@@ -1,16 +1,16 @@
-# Chapter 6: Finetuning for Classification
+# 第6章：分类微调
 
 &nbsp;
-## Main Chapter Code
+## 主要章节代码
 
-- [01_main-chapter-code](01_main-chapter-code) contains the main chapter code
+- [01_main-chapter-code](01_main-chapter-code) 包含主要章节代码
 
 &nbsp;
-## Bonus Materials
+## 奖励材料
 
-- [02_bonus_additional-experiments](02_bonus_additional-experiments) includes additional experiments (e.g., training the last vs first token, extending the input length, etc.)
-- [03_bonus_imdb-classification](03_bonus_imdb-classification) compares the LLM from chapter 6 with other models on a 50k IMDB movie review sentiment classification dataset
-- [04_user_interface](04_user_interface) implements an interactive user interface to interact with the pretrained LLM
+- [02_bonus_additional-experiments](02_bonus_additional-experiments) 包含额外实验（例如，训练最后一个vs第一个令牌，扩展输入长度等）
+- [03_bonus_imdb-classification](03_bonus_imdb-classification) 在5万条IMDB电影评论情感分类数据集上比较第6章的LLM与其他模型
+- [04_user_interface](04_user_interface) 实现与预训练LLM交互的交互式用户界面
 
 
 
@@ -19,4 +19,4 @@
 <br>
 <br>
 
-[![Link to the video](https://img.youtube.com/vi/5PFXJYme4ik/0.jpg)](https://www.youtube.com/watch?v=5PFXJYme4ik)
+[![视频链接](https://img.youtube.com/vi/5PFXJYme4ik/0.jpg)](https://www.youtube.com/watch?v=5PFXJYme4ik)
