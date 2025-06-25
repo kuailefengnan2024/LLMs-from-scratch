@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>嵌入层与线性层详细原理对比</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.6.1/mermaid.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            backdrop-filter: blur(10px);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .mermaid {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin: 20px 0;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+            min-height: 600px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 嵌入层与线性层详细原理对比</h1>
+        
+        <div class="mermaid">
+            graph TD
+                A["🎯 输入Token IDs<br/>[2, 3, 1]<br/>批次大小: 3"] --> B{🚀 选择实现方式}
+                
+                %% 嵌入层路径
+                B -->|高效直接查找| C["🔧 nn.Embedding<br/>参数设置:<br/>• num_embeddings=4<br/>• embedding_dim=5"]
+                
+                C --> D["📊 嵌入权重矩阵 E<br/>形状: (4×5)<br/>┌─────────────────────────┐<br/>│ 0: [0.1, 0.2, 0.3, 0.4, 0.5] │<br/>│ 1: [0.6, 0.7, 0.8, 0.9, 1.0] │<br/>│ 2: [1.1, 1.2, 1.3, 1.4, 1.5] │<br/>│ 3: [1.6, 1.7, 1.8, 1.9, 2.0] │<br/>└─────────────────────────┘"]
+                
+                D --> E["⚡ 直接索引查找<br/>🔍 ID=2 → 行2: [1.1, 1.2, 1.3, 1.4, 1.5]<br/>🔍 ID=3 → 行3: [1.6, 1.7, 1.8, 1.9, 2.0]<br/>🔍 ID=1 → 行1: [0.6, 0.7, 0.8, 0.9, 1.0]<br/>⏱️ 时间复杂度: O(1)<br/>💾 内存高效: 无额外矩阵"]
+                
+                %% 线性层路径
+                B -->|矩阵乘法方式| F["🔄 One-hot编码转换<br/>ID → 稀疏向量"]
+                
+                F --> G["📋 One-hot矩阵 H<br/>形状: (3×4)<br/>┌─────────────┐<br/>│ ID=2: [0,0,1,0] │<br/>│ ID=3: [0,0,0,1] │<br/>│ ID=1: [0,1,0,0] │<br/>└─────────────┘<br/>💾 内存占用大,稀疏矩阵"]
+                
+                G --> H["🔧 nn.Linear<br/>参数设置:<br/>• in_features=4<br/>• out_features=5<br/>• bias=False"]
+                
+                H --> I["📊 线性层权重矩阵 W<br/>形状: (5×4)<br/>W = E^T (嵌入权重转置)<br/>┌────────────────────┐<br/>│ [0.1, 0.6, 1.1, 1.6] │<br/>│ [0.2, 0.7, 1.2, 1.7] │<br/>│ [0.3, 0.8, 1.3, 1.8] │<br/>│ [0.4, 0.9, 1.4, 1.9] │<br/>│ [0.5, 1.0, 1.5, 2.0] │<br/>└────────────────────┘"]
+                
+                I --> J["🧮 矩阵乘法运算<br/>输出 = H × W^T<br/>┌─────────────┐   ┌─────────────────────────┐<br/>│ [0,0,1,0]   │ × │ [0.1, 0.2, 0.3, 0.4, 0.5] │<br/>│ [0,0,0,1]   │   │ [0.6, 0.7, 0.8, 0.9, 1.0] │<br/>│ [0,1,0,0]   │   │ [1.1, 1.2, 1.3, 1.4, 1.5] │<br/>└─────────────┘   │ [1.6, 1.7, 1.8, 1.9, 2.0] │<br/>                   └─────────────────────────┘<br/>⏱️ 时间复杂度: O(d×n)<br/>⚠️ 大量零乘法运算"]
+                
+                %% 结果汇聚
+                E --> K["✅ 输出结果<br/>形状: (3×5)<br/>┌─────────────────────────┐<br/>│ [1.1, 1.2, 1.3, 1.4, 1.5] │<br/>│ [1.6, 1.7, 1.8, 1.9, 2.0] │<br/>│ [0.6, 0.7, 0.8, 0.9, 1.0] │<br/>└─────────────────────────┘"]
+                
+                J --> L["✅ 输出结果<br/>形状: (3×5)<br/>┌─────────────────────────┐<br/>│ [1.1, 1.2, 1.3, 1.4, 1.5] │<br/>│ [1.6, 1.7, 1.8, 1.9, 2.0] │<br/>│ [0.6, 0.7, 0.8, 0.9, 1.0] │<br/>└─────────────────────────┘"]
+                
+                K --> M["🎉 数学等价性验证<br/>两种方法结果完全相同!<br/>✨ 嵌入层 = 线性层 + One-hot<br/>但嵌入层效率更高"]
+                L --> M
+                
+                %% 详细说明框
+                N["📚 嵌入层优势:<br/>• 直接索引,无矩阵乘法<br/>• 内存占用小<br/>• 计算速度快<br/>• GPU友好<br/>• 现代NLP标准做法"]
+                
+                O["⚠️ 线性层劣势:<br/>• One-hot编码稀疏<br/>• 大量无效零乘法<br/>• 内存占用大<br/>• 计算资源浪费<br/>• 仅用于理论验证"]
+                
+                E -.-> N
+                J -.-> O
+                
+                %% 样式定义
+                style A fill:#ffebee,stroke:#e91e63,stroke-width:3px
+                style C fill:#e8f5e8,stroke:#4caf50,stroke-width:2px
+                style D fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+                style E fill:#e8f5e8,stroke:#4caf50,stroke-width:3px
+                style F fill:#e3f2fd,stroke:#2196f3,stroke-width:2px
+                style G fill:#e1f5fe,stroke:#0288d1,stroke-width:2px
+                style H fill:#e3f2fd,stroke:#2196f3,stroke-width:2px
+                style I fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+                style J fill:#ffebee,stroke:#f44336,stroke-width:2px
+                style K fill:#e8f5e8,stroke:#4caf50,stroke-width:3px
+                style L fill:#e8f5e8,stroke:#4caf50,stroke-width:3px
+                style M fill:#fff3e0,stroke:#ff9800,stroke-width:4px
+                style N fill:#e8f5e8,stroke:#4caf50,stroke-width:2px
+                style O fill:#ffebee,stroke:#f44336,stroke-width:2px
+        </div>
+    </div>
+    
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            themeVariables: {
+                primaryColor: '#2196f3',
+                primaryTextColor: '#fff',
+                primaryBorderColor: '#1976d2',
+                lineColor: '#666',
+                secondaryColor: '#4caf50',
+                tertiaryColor: '#ff9800',
+                background: '#ffffff',
+                mainBkg: '#ffffff',
+                secondBkg: '#f8f9fa'
+            },
+            flowchart: {
+                htmlLabels: true,
+                curve: 'basis',
+                padding: 10
+            }
+        });
+    </script>
+</body>
+</html>
