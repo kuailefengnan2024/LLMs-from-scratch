@@ -115,20 +115,20 @@ from llms_from_scratch.appendix_d import find_highest_gradient, train_model
 
 &nbsp;
 
-### GPT-2 KV cache variant (Bonus material)
+### GPT-2 KV缓存变体（奖励材料）
 
 ```python
 from llms_from_scratch.kv_cache.gpt2 import GPTModel
 from llms_from_scratch.kv_cache.generate import generate_text_simple
 ```
 
-For more information about KV caching, please see the [KV cache README](../../ch04/03_kv-cache).
+有关KV缓存的更多信息，请参见[KV缓存README](../../ch04/03_kv-cache)。
 
 
 
 &nbsp;
 
-### Llama  3 (Bonus material)
+### Llama 3（奖励材料）
 
 ```python
 from llms_from_scratch.llama3 import (
@@ -139,18 +139,18 @@ from llms_from_scratch.llama3 import (
     clean_text
 )
 
-# KV cache drop-in replacements
+# KV缓存直接替换
 from llms_from_scratch.kv_cache.llama3 import Llama3Model
 from llms_from_scratch.kv_cache.generate import generate_text_simple
 ```
 
-For the `llms_from_scratch.llama3` usage information, please see [this bonus section](../../ch05/07_gpt_to_llama/README.md). 
+有关`llms_from_scratch.llama3`的使用信息，请参见[这个奖励部分](../../ch05/07_gpt_to_llama/README.md)。
 
-For more information about KV caching, please see the [KV cache README](../../ch04/03_kv-cache).
+有关KV缓存的更多信息，请参见[KV缓存README](../../ch04/03_kv-cache)。
 
 
 &nbsp;
-### Qwen3 (Bonus material)
+### Qwen3（奖励材料）
 
 ```python
 from llms_from_scratch.qwen3 import (
@@ -158,11 +158,11 @@ from llms_from_scratch.qwen3 import (
     Qwen3Tokenizer,
 )
 
-# KV cache drop-in replacements
+# KV缓存直接替换
 from llms_from_scratch.kv_cache.qwen3 import Qwen3Model
 from llms_from_scratch.kv_cache.generate import generate_text_simple
 ```
 
-For the `llms_from_scratch.qwen3` usage information, please see [this bonus section](../../ch05/11_qwen3/README.md).
+有关`llms_from_scratch.qwen3`的使用信息，请参见[这个奖励部分](../../ch05/11_qwen3/README.md)。
 
-For more information about KV caching, please see the [KV cache README](../../ch04/03_kv-cache).
+有关KV缓存的更多信息，请参见[KV缓存README](../../ch04/03_kv-cache)。
