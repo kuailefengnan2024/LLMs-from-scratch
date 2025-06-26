@@ -1,4 +1,4 @@
-# Code to test the GPT model implementation against the KV cache variants
+# 用于测试GPT模型实现与KV缓存变体的代码
 
 import pytest
 import torch

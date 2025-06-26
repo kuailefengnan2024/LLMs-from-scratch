@@ -3,7 +3,7 @@
 #   - https://www.manning.com/books/build-a-large-language-model-from-scratch
 # Code: https://github.com/rasbt/LLMs-from-scratch
 
-# File for internal use (unit tests)
+# 内部使用文件（单元测试）
 
 import pytest
 from gpt_train import main
@@ -15,10 +15,10 @@ from urllib.parse import urlparse
 def gpt_config():
     return {
         "vocab_size": 50257,
-        "context_length": 12,  # small for testing efficiency
-        "emb_dim": 32,         # small for testing efficiency
-        "n_heads": 4,          # small for testing efficiency
-        "n_layers": 2,         # small for testing efficiency
+        "context_length": 12,  # 为了测试效率设置较小值
+        "emb_dim": 32,         # 为了测试效率设置较小值
+        "n_heads": 4,          # 为了测试效率设置较小值
+        "n_layers": 2,         # 为了测试效率设置较小值
         "drop_rate": 0.1,
         "qkv_bias": False
     }
@@ -28,7 +28,7 @@ def gpt_config():
 def other_settings():
     return {
         "learning_rate": 5e-4,
-        "num_epochs": 1,    # small for testing efficiency
+        "num_epochs": 1,    # 为了测试效率设置较小值
         "batch_size": 2,
         "weight_decay": 0.1
     }
@@ -37,9 +37,9 @@ def other_settings():
 def test_main(gpt_config, other_settings):
     train_losses, val_losses, tokens_seen, model = main(gpt_config, other_settings)
 
-    assert len(train_losses) == 39, "Unexpected number of training losses"
-    assert len(val_losses) == 39, "Unexpected number of validation losses"
-    assert len(tokens_seen) == 39, "Unexpected number of tokens seen"
+    assert len(train_losses) == 39, "训练损失数量不符合预期"
+    assert len(val_losses) == 39, "验证损失数量不符合预期"
+    assert len(tokens_seen) == 39, "已处理的tokens数量不符合预期"
 
 
 def check_file_size(url, expected_size):
@@ -52,14 +52,14 @@ def check_file_size(url, expected_size):
     conn.request("HEAD", parsed_url.path)
     response = conn.getresponse()
     if response.status != 200:
-        return False, f"{url} not accessible"
+        return False, f"{url} 无法访问"
     size = response.getheader("Content-Length")
     if size is None:
-        return False, "Content-Length header is missing"
+        return False, "缺少Content-Length头部信息"
     size = int(size)
     if size != expected_size:
-        return False, f"{url} file has expected size {expected_size}, but got {size}"
-    return True, f"{url} file size is correct"
+        return False, f"{url} 文件的预期大小为 {expected_size}，但实际大小为 {size}"
+    return True, f"{url} 文件大小正确"
 
 
 def test_model_files():

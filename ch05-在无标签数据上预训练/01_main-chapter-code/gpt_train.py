@@ -10,18 +10,18 @@ import urllib.request
 import tiktoken
 
 
-# Import from local files
+# 从本地文件导入
 from previous_chapters import GPTModel, create_dataloader_v1, generate_text_simple
 
 
 def text_to_token_ids(text, tokenizer):
     encoded = tokenizer.encode(text)
-    encoded_tensor = torch.tensor(encoded).unsqueeze(0)  # add batch dimension
+    encoded_tensor = torch.tensor(encoded).unsqueeze(0)  # 添加批次维度
     return encoded_tensor
 
 
 def token_ids_to_text(token_ids, tokenizer):
-    flat = token_ids.squeeze(0)  # remove batch dimension
+    flat = token_ids.squeeze(0)  # 移除批次维度
     return tokenizer.decode(flat.tolist())
 
 
@@ -68,40 +68,40 @@ def generate_and_print_sample(model, tokenizer, device, start_context):
             max_new_tokens=50, context_size=context_size
         )
         decoded_text = token_ids_to_text(token_ids, tokenizer)
-        print(decoded_text.replace("\n", " "))  # Compact print format
+        print(decoded_text.replace("\n", " "))  # 紧凑打印格式
     model.train()
 
 
 def train_model_simple(model, train_loader, val_loader, optimizer, device, num_epochs,
                        eval_freq, eval_iter, start_context, tokenizer):
-    # Initialize lists to track losses and tokens seen
+    # 初始化列表以跟踪损失和已处理的tokens
     train_losses, val_losses, track_tokens_seen = [], [], []
     tokens_seen = 0
     global_step = -1
 
-    # Main training loop
+    # 主训练循环
     for epoch in range(num_epochs):
-        model.train()  # Set model to training mode
+        model.train()  # 设置模型为训练模式
 
         for input_batch, target_batch in train_loader:
-            optimizer.zero_grad()  # Reset loss gradients from previous batch iteration
+            optimizer.zero_grad()  # 重置上一个批次迭代的损失梯度
             loss = calc_loss_batch(input_batch, target_batch, model, device)
-            loss.backward()  # Calculate loss gradients
-            optimizer.step()  # Update model weights using loss gradients
+            loss.backward()  # 计算损失梯度
+            optimizer.step()  # 使用损失梯度更新模型权重
             tokens_seen += input_batch.numel()
             global_step += 1
 
-            # Optional evaluation step
+            # 可选的评估步骤
             if global_step % eval_freq == 0:
                 train_loss, val_loss = evaluate_model(
                     model, train_loader, val_loader, device, eval_iter)
                 train_losses.append(train_loss)
                 val_losses.append(val_loss)
                 track_tokens_seen.append(tokens_seen)
-                print(f"Ep {epoch+1} (Step {global_step:06d}): "
-                      f"Train loss {train_loss:.3f}, Val loss {val_loss:.3f}")
+                print(f"轮次 {epoch+1} (步骤 {global_step:06d}): "
+                      f"训练损失 {train_loss:.3f}, 验证损失 {val_loss:.3f}")
 
-        # Print a sample text after each epoch
+        # 每个轮次后打印一个示例文本
         generate_and_print_sample(
             model, tokenizer, device, start_context
         )
@@ -112,19 +112,19 @@ def train_model_simple(model, train_loader, val_loader, optimizer, device, num_e
 def plot_losses(epochs_seen, tokens_seen, train_losses, val_losses):
     fig, ax1 = plt.subplots()
 
-    # Plot training and validation loss against epochs
-    ax1.plot(epochs_seen, train_losses, label="Training loss")
-    ax1.plot(epochs_seen, val_losses, linestyle="-.", label="Validation loss")
-    ax1.set_xlabel("Epochs")
-    ax1.set_ylabel("Loss")
+    # 根据轮次绘制训练和验证损失
+    ax1.plot(epochs_seen, train_losses, label="训练损失")
+    ax1.plot(epochs_seen, val_losses, linestyle="-.", label="验证损失")
+    ax1.set_xlabel("轮次")
+    ax1.set_ylabel("损失")
     ax1.legend(loc="upper right")
 
-    # Create a second x-axis for tokens seen
-    ax2 = ax1.twiny()  # Create a second x-axis that shares the same y-axis
-    ax2.plot(tokens_seen, train_losses, alpha=0)  # Invisible plot for aligning ticks
-    ax2.set_xlabel("Tokens seen")
+    # 为已处理tokens创建第二个x轴
+    ax2 = ax1.twiny()  # 创建共享相同y轴的第二个x轴
+    ax2.plot(tokens_seen, train_losses, alpha=0)  # 用于对齐刻度的隐形图
+    ax2.set_xlabel("已处理tokens")
 
-    fig.tight_layout()  # Adjust layout to make room
+    fig.tight_layout()  # 调整布局以腾出空间
     # plt.show()
 
 
@@ -134,7 +134,7 @@ def main(gpt_config, settings):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     ##############################
-    # Download data if necessary
+    # 如有必要，下载数据
     ##############################
 
     file_path = "the-verdict.txt"
@@ -150,20 +150,20 @@ def main(gpt_config, settings):
             text_data = file.read()
 
     ##############################
-    # Initialize model
+    # 初始化模型
     ##############################
 
     model = GPTModel(gpt_config)
-    model.to(device)  # no assignment model = model.to(device) necessary for nn.Module classes
+    model.to(device)  # 对于nn.Module类，不需要赋值 model = model.to(device)
     optimizer = torch.optim.AdamW(
         model.parameters(), lr=settings["learning_rate"], weight_decay=settings["weight_decay"]
     )
 
     ##############################
-    # Set up dataloaders
+    # 设置数据加载器
     ##############################
 
-    # Train/validation ratio
+    # 训练/验证比例
     train_ratio = 0.90
     split_idx = int(train_ratio * len(text_data))
 
@@ -188,7 +188,7 @@ def main(gpt_config, settings):
     )
 
     ##############################
-    # Train model
+    # 训练模型
     ##############################
 
     tokenizer = tiktoken.get_encoding("gpt2")
@@ -205,13 +205,13 @@ def main(gpt_config, settings):
 if __name__ == "__main__":
 
     GPT_CONFIG_124M = {
-        "vocab_size": 50257,    # Vocabulary size
-        "context_length": 256,  # Shortened context length (orig: 1024)
-        "emb_dim": 768,         # Embedding dimension
-        "n_heads": 12,          # Number of attention heads
-        "n_layers": 12,         # Number of layers
-        "drop_rate": 0.1,       # Dropout rate
-        "qkv_bias": False       # Query-key-value bias
+        "vocab_size": 50257,    # 词汇表大小
+        "context_length": 256,  # 缩短的上下文长度（原始: 1024）
+        "emb_dim": 768,         # 嵌入维度  
+        "n_heads": 12,          # 注意力头数
+        "n_layers": 12,         # 层数
+        "drop_rate": 0.1,       # Dropout率
+        "qkv_bias": False       # 查询-键-值偏置
     }
 
     OTHER_SETTINGS = {
@@ -222,21 +222,21 @@ if __name__ == "__main__":
     }
 
     ###########################
-    # Initiate training
+    # 开始训练
     ###########################
 
     train_losses, val_losses, tokens_seen, model = main(GPT_CONFIG_124M, OTHER_SETTINGS)
 
     ###########################
-    # After training
+    # 训练后
     ###########################
 
-    # Plot results
+    # 绘制结果
     epochs_tensor = torch.linspace(0, OTHER_SETTINGS["num_epochs"], len(train_losses))
     plot_losses(epochs_tensor, tokens_seen, train_losses, val_losses)
     plt.savefig("loss.pdf")
 
-    # Save and load model
+    # 保存和加载模型
     torch.save(model.state_dict(), "model.pth")
     model = GPTModel(GPT_CONFIG_124M)
     model.load_state_dict(torch.load("model.pth", weights_only=True))

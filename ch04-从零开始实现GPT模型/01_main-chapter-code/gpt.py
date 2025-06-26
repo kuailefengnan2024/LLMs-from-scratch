@@ -239,13 +239,13 @@ def main():
         "emb_dim": 768,          # 嵌入维度
         "n_heads": 12,           # 注意力头数
         "n_layers": 12,          # 层数
-        "drop_rate": 0.1,        # Dropout率
+        "drop_rate": 0.1,        # 丢弃率
         "qkv_bias": False        # 查询-键-值偏置
     }
 
     torch.manual_seed(123)
     model = GPTModel(GPT_CONFIG_124M)
-    model.eval()  # 禁用dropout
+    model.eval()  # 禁用丢弃
 
     start_context = "Hello, I am"
 
