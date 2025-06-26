@@ -19,20 +19,20 @@ import tiktoken
 def test_instruction_finetune(tmp_path):
 
     #######################################
-    # Download and prepare dataset
+    # 下载并准备数据集
     #######################################
     file_path = tmp_path / "instruction-data.json"
     url = "https://raw.githubusercontent.com/rasbt/LLMs-from-scratch/main/ch07/01_main-chapter-code/instruction-data.json"
     data = download_and_load_file(file_path, url)
 
-    train_portion = int(len(data) * 0.85)  # 85% for training
-    test_portion = int(len(data) * 0.1)    # 10% for testing
+    train_portion = int(len(data) * 0.85)  # 85% 用于训练
+    test_portion = int(len(data) * 0.1)    # 10% 用于测试
 
     train_data = data[:train_portion]
     test_data = data[train_portion:train_portion + test_portion]
     val_data = data[train_portion + test_portion:]
 
-    # Use very small subset for testing purposes
+    # 为了测试目的使用非常小的子集
     train_data = train_data[:15]
     val_data = val_data[:15]
     test_data = test_data[:15]
@@ -68,10 +68,10 @@ def test_instruction_finetune(tmp_path):
     )
 
     #######################################
-    # Load pretrained model
+    # 加载预训练模型
     #######################################
 
-    # Small GPT model for testing purposes
+    # 用于测试目的的小型GPT模型
     BASE_CONFIG = {
         "vocab_size": 50257,
         "context_length": 120,
@@ -86,11 +86,11 @@ def test_instruction_finetune(tmp_path):
     device = "cpu"
     CHOOSE_MODEL = "Small test model"
 
-    print("Loaded model:", CHOOSE_MODEL)
+    print("已加载模型:", CHOOSE_MODEL)
     print(50*"-")
 
     #######################################
-    # Finetuning the model
+    # 微调模型
     #######################################
 
     num_epochs = 10

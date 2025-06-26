@@ -1,7 +1,7 @@
-# Copyright (c) Sebastian Raschka under Apache License 2.0 (see LICENSE.txt).
-# Source for "Build a Large Language Model From Scratch"
+# 版权所有 (c) Sebastian Raschka，遵循Apache License 2.0 (详见LICENSE.txt)。
+# 来源于 "从零开始构建大语言模型"
 #   - https://www.manning.com/books/build-a-large-language-model-from-scratch
-# Code: https://github.com/rasbt/LLMs-from-scratch
+# 代码: https://github.com/rasbt/LLMs-from-scratch
 
 from .ch04 import generate_text_simple
 
@@ -18,38 +18,38 @@ from tqdm import tqdm
 
 def generate(model, idx, max_new_tokens, context_size, temperature=0.0, top_k=None, eos_id=None):
 
-    # For-loop is the same as before: Get logits, and only focus on last time step
+    # For循环与之前相同：获取logits，只关注最后一个时间步
     for _ in range(max_new_tokens):
         idx_cond = idx[:, -context_size:]
         with torch.no_grad():
             logits = model(idx_cond)
         logits = logits[:, -1, :]
 
-        # New: Filter logits with top_k sampling
+        # 新增：使用top_k采样过滤logits
         if top_k is not None:
-            # Keep only top_k values
+            # 只保留前top_k个值
             top_logits, _ = torch.topk(logits, top_k)
             min_val = top_logits[:, -1]
             logits = torch.where(logits < min_val, torch.tensor(float('-inf')).to(logits.device), logits)
 
-        # New: Apply temperature scaling
+        # 新增：应用温度缩放
         if temperature > 0.0:
             logits = logits / temperature
 
-            # Apply softmax to get probabilities
+            # 应用softmax获取概率
             probs = torch.softmax(logits, dim=-1)  # (batch_size, context_len)
 
-            # Sample from the distribution
+            # 从分布中采样
             idx_next = torch.multinomial(probs, num_samples=1)  # (batch_size, 1)
 
-        # Otherwise same as before: get idx of the vocab entry with the highest logits value
+        # 否则与之前相同：获取具有最高logits值的词汇表条目的索引
         else:
             idx_next = torch.argmax(logits, dim=-1, keepdim=True)  # (batch_size, 1)
 
-        if idx_next == eos_id:  # Stop generating early if end-of-sequence token is encountered and eos_id is specified
+        if idx_next == eos_id:  # 如果遇到序列结束token且指定了eos_id，则提前停止生成
             break
 
-        # Same as before: append sampled index to the running sequence
+        # 与之前相同：将采样的索引追加到运行序列
         idx = torch.cat((idx, idx_next), dim=1)  # (batch_size, num_tokens+1)
 
     return idx
@@ -57,23 +57,23 @@ def generate(model, idx, max_new_tokens, context_size, temperature=0.0, top_k=No
 
 def train_model_simple(model, train_loader, val_loader, optimizer, device, num_epochs,
                        eval_freq, eval_iter, start_context, tokenizer):
-    # Initialize lists to track losses and tokens seen
+    # 初始化列表以跟踪损失和已见token
     train_losses, val_losses, track_tokens_seen = [], [], []
     tokens_seen, global_step = 0, -1
 
-    # Main training loop
+    # 主训练循环
     for epoch in range(num_epochs):
-        model.train()  # Set model to training mode
+        model.train()  # 将模型设置为训练模式
 
         for input_batch, target_batch in train_loader:
-            optimizer.zero_grad()  # Reset loss gradients from previous batch iteration
+            optimizer.zero_grad()  # 重置前一批次迭代的损失梯度
             loss = calc_loss_batch(input_batch, target_batch, model, device)
-            loss.backward()  # Calculate loss gradients
-            optimizer.step()  # Update model weights using loss gradients
+            loss.backward()  # 计算损失梯度
+            optimizer.step()  # 使用损失梯度更新模型权重
             tokens_seen += input_batch.numel()
             global_step += 1
 
-            # Optional evaluation step
+            # 可选的评估步骤
             if global_step % eval_freq == 0:
                 train_loss, val_loss = evaluate_model(
                     model, train_loader, val_loader, device, eval_iter)
@@ -83,7 +83,7 @@ def train_model_simple(model, train_loader, val_loader, optimizer, device, num_e
                 print(f"Ep {epoch+1} (Step {global_step:06d}): "
                       f"Train loss {train_loss:.3f}, Val loss {val_loss:.3f}")
 
-        # Print a sample text after each epoch
+        # 每个epoch后打印一个样本文本
         generate_and_print_sample(
             model, tokenizer, device, start_context
         )
@@ -110,13 +110,13 @@ def generate_and_print_sample(model, tokenizer, device, start_context):
             max_new_tokens=50, context_size=context_size
         )
         decoded_text = token_ids_to_text(token_ids, tokenizer)
-        print(decoded_text.replace("\n", " "))  # Compact print format
+        print(decoded_text.replace("\n", " "))  # 紧凑的打印格式
     model.train()
 
 
 def assign(left, right):
     if left.shape != right.shape:
-        raise ValueError(f"Shape mismatch. Left: {left.shape}, Right: {right.shape}")
+        raise ValueError(f"形状不匹配。Left: {left.shape}, Right: {right.shape}")
     return torch.nn.Parameter(torch.tensor(right))
 
 
@@ -183,12 +183,12 @@ def load_weights_into_gpt(gpt, params):
 
 def text_to_token_ids(text, tokenizer):
     encoded = tokenizer.encode(text, allowed_special={"<|endoftext|>"})
-    encoded_tensor = torch.tensor(encoded).unsqueeze(0)  # add batch dimension
+    encoded_tensor = torch.tensor(encoded).unsqueeze(0)  # 添加批次维度
     return encoded_tensor
 
 
 def token_ids_to_text(token_ids, tokenizer):
-    flat = token_ids.squeeze(0)  # remove batch dimension
+    flat = token_ids.squeeze(0)  # 移除批次维度
     return tokenizer.decode(flat.tolist())
 
 
@@ -206,8 +206,8 @@ def calc_loss_loader(data_loader, model, device, num_batches=None):
     elif num_batches is None:
         num_batches = len(data_loader)
     else:
-        # Reduce the number of batches to match the total number of batches in the data loader
-        # if num_batches exceeds the number of batches in the data loader
+        # 如果num_batches超过数据加载器中的批次数量，
+        # 则减少批次数量以匹配数据加载器中的总批次数
         num_batches = min(num_batches, len(data_loader))
     for i, (input_batch, target_batch) in enumerate(data_loader):
         if i < num_batches:
@@ -221,20 +221,20 @@ def calc_loss_loader(data_loader, model, device, num_batches=None):
 def plot_losses(epochs_seen, tokens_seen, train_losses, val_losses):
     fig, ax1 = plt.subplots(figsize=(5, 3))
 
-    # Plot training and validation loss against epochs
-    ax1.plot(epochs_seen, train_losses, label="Training loss")
-    ax1.plot(epochs_seen, val_losses, linestyle="-.", label="Validation loss")
+    # 绘制训练和验证损失与epoch的关系
+    ax1.plot(epochs_seen, train_losses, label="训练损失")
+    ax1.plot(epochs_seen, val_losses, linestyle="-.", label="验证损失")
     ax1.set_xlabel("Epochs")
-    ax1.set_ylabel("Loss")
+    ax1.set_ylabel("损失")
     ax1.legend(loc="upper right")
-    ax1.xaxis.set_major_locator(MaxNLocator(integer=True))  # only show integer labels on x-axis
+    ax1.xaxis.set_major_locator(MaxNLocator(integer=True))  # 在x轴上只显示整数标签
 
-    # Create a second x-axis for tokens seen
-    ax2 = ax1.twiny()  # Create a second x-axis that shares the same y-axis
-    ax2.plot(tokens_seen, train_losses, alpha=0)  # Invisible plot for aligning ticks
-    ax2.set_xlabel("Tokens seen")
+    # 为已见token创建第二个x轴
+    ax2 = ax1.twiny()  # 创建一个共享相同y轴的第二个x轴
+    ax2.plot(tokens_seen, train_losses, alpha=0)  # 用于对齐刻度的不可见图
+    ax2.set_xlabel("已见token数")
 
-    fig.tight_layout()  # Adjust layout to make room
+    fig.tight_layout()  # 调整布局以留出空间
     plt.savefig("loss-plot.pdf")
     plt.show()
 
@@ -242,12 +242,12 @@ def plot_losses(epochs_seen, tokens_seen, train_losses, val_losses):
 def download_and_load_gpt2(model_size, models_dir):
     import tensorflow as tf
 
-    # Validate model size
+    # 验证模型大小
     allowed_sizes = ("124M", "355M", "774M", "1558M")
     if model_size not in allowed_sizes:
-        raise ValueError(f"Model size not in {allowed_sizes}")
+        raise ValueError(f"模型大小不在 {allowed_sizes} 中")
 
-    # Define paths
+    # 定义路径
     model_dir = os.path.join(models_dir, model_size)
     base_url = "https://openaipublic.blob.core.windows.net/gpt-2/models"
     backup_base_url = "https://f001.backblazeb2.com/file/LLMs-from-scratch/gpt2"
@@ -257,7 +257,7 @@ def download_and_load_gpt2(model_size, models_dir):
         "model.ckpt.meta", "vocab.bpe"
     ]
 
-    # Download files
+    # 下载文件
     os.makedirs(model_dir, exist_ok=True)
     for filename in filenames:
         file_url = os.path.join(base_url, model_size, filename)
@@ -265,7 +265,7 @@ def download_and_load_gpt2(model_size, models_dir):
         file_path = os.path.join(model_dir, filename)
         download_file(file_url, file_path, backup_url)
 
-    # Load settings and params
+    # 加载设置和参数
     tf_ckpt_path = tf.train.latest_checkpoint(model_dir)
     settings = json.load(open(os.path.join(model_dir, "hparams.json"), "r", encoding="utf-8"))
     params = load_gpt2_params_from_tf_ckpt(tf_ckpt_path, settings)
@@ -276,19 +276,19 @@ def download_and_load_gpt2(model_size, models_dir):
 def download_file(url, destination, backup_url=None):
     def _attempt_download(download_url):
         with urllib.request.urlopen(download_url) as response:
-            # Get the total file size from headers, defaulting to 0 if not present
+            # 从headers获取总文件大小，如果不存在则默认为0
             file_size = int(response.headers.get("Content-Length", 0))
 
-            # Check if file exists and has the same size
+            # 检查文件是否存在且大小相同
             if os.path.exists(destination):
                 file_size_local = os.path.getsize(destination)
                 if file_size == file_size_local:
-                    print(f"File already exists and is up-to-date: {destination}")
-                    return True  # Indicate success without re-downloading
+                    print(f"文件已存在且是最新的: {destination}")
+                    return True  # 表示成功而无需重新下载
 
-            block_size = 1024  # 1 Kilobyte
+            block_size = 1024  # 1千字节
 
-            # Initialize the progress bar with total file size
+            # 使用总文件大小初始化进度条
             progress_bar_description = os.path.basename(download_url)
             with tqdm(total=file_size, unit="iB", unit_scale=True, desc=progress_bar_description) as progress_bar:
                 with open(destination, "wb") as file:
@@ -305,50 +305,50 @@ def download_file(url, destination, backup_url=None):
             return
     except (urllib.error.HTTPError, urllib.error.URLError):
         if backup_url is not None:
-            print(f"Primary URL ({url}) failed. Attempting backup URL: {backup_url}")
+            print(f"主URL ({url}) 失败。尝试备用URL: {backup_url}")
             try:
                 if _attempt_download(backup_url):
                     return
             except urllib.error.HTTPError:
                 pass
 
-        # If we reach here, both attempts have failed
+        # 如果执行到这里，两次尝试都失败了
         error_message = (
-            f"Failed to download from both primary URL ({url})"
-            f"{' and backup URL (' + backup_url + ')' if backup_url else ''}."
-            "\nCheck your internet connection or the file availability.\n"
-            "For help, visit: https://github.com/rasbt/LLMs-from-scratch/discussions/273"
+            f"从主URL ({url})"
+            f"{' 和备用URL (' + backup_url + ')' if backup_url else ''} 下载失败。"
+            "\n检查您的网络连接或文件可用性。\n"
+            "如需帮助，请访问: https://github.com/rasbt/LLMs-from-scratch/discussions/273"
         )
         print(error_message)
     except Exception as e:
-        print(f"An unexpected error occurred: {e}")
+        print(f"发生意外错误: {e}")
 
 
 def load_gpt2_params_from_tf_ckpt(ckpt_path, settings):
     import tensorflow as tf
 
-    # Initialize parameters dictionary with empty blocks for each layer
+    # 为每层初始化参数字典，包含空块
     params = {"blocks": [{} for _ in range(settings["n_layer"])]}
 
-    # Iterate over each variable in the checkpoint
+    # 遍历检查点中的每个变量
     for name, _ in tf.train.list_variables(ckpt_path):
-        # Load the variable and remove singleton dimensions
+        # 加载变量并移除单维度
         variable_array = np.squeeze(tf.train.load_variable(ckpt_path, name))
 
-        # Process the variable name to extract relevant parts
-        variable_name_parts = name.split("/")[1:]  # Skip the 'model/' prefix
+        # 处理变量名以提取相关部分
+        variable_name_parts = name.split("/")[1:]  # 跳过'model/'前缀
 
-        # Identify the target dictionary for the variable
+        # 确定变量的目标字典
         target_dict = params
         if variable_name_parts[0].startswith("h"):
             layer_number = int(variable_name_parts[0][1:])
             target_dict = params["blocks"][layer_number]
 
-        # Recursively access or create nested dictionaries
+        # 递归访问或创建嵌套字典
         for key in variable_name_parts[1:-1]:
             target_dict = target_dict.setdefault(key, {})
 
-        # Assign the variable array to the last key
+        # 将变量数组分配给最后一个键
         last_key = variable_name_parts[-1]
         target_dict[last_key] = variable_array
 

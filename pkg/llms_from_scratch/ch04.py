@@ -1,7 +1,7 @@
-# Copyright (c) Sebastian Raschka under Apache License 2.0 (see LICENSE.txt).
-# Source for "Build a Large Language Model From Scratch"
+# 版权所有 (c) Sebastian Raschka，遵循Apache License 2.0 (详见LICENSE.txt)。
+# 来源于 "从零开始构建大语言模型"
 #   - https://www.manning.com/books/build-a-large-language-model-from-scratch
-# Code: https://github.com/rasbt/LLMs-from-scratch
+# 代码: https://github.com/rasbt/LLMs-from-scratch
 
 from .ch03 import MultiHeadAttention, PyTorchMultiHeadAttention
 import torch
@@ -62,19 +62,19 @@ class TransformerBlock(nn.Module):
         self.drop_resid = nn.Dropout(cfg["drop_rate"])
 
     def forward(self, x):
-        # Shortcut connection for attention block
+        # 注意力块的快捷连接
         shortcut = x
         x = self.norm1(x)
-        x = self.att(x)   # Shape [batch_size, num_tokens, emb_size]
+        x = self.att(x)   # 形状 [batch_size, num_tokens, emb_size]
         x = self.drop_resid(x)
-        x = x + shortcut  # Add the original input back
+        x = x + shortcut  # 添加原始输入
 
-        # Shortcut connection for feed-forward block
+        # 前馈块的快捷连接
         shortcut = x
         x = self.norm2(x)
         x = self.ff(x)
         x = self.drop_resid(x)
-        x = x + shortcut  # Add the original input back
+        x = x + shortcut  # 添加原始输入
 
         return x
 
@@ -96,7 +96,7 @@ class GPTModel(nn.Module):
         batch_size, seq_len = in_idx.shape
         tok_embeds = self.tok_emb(in_idx)
         pos_embeds = self.pos_emb(torch.arange(seq_len, device=in_idx.device))
-        x = tok_embeds + pos_embeds  # Shape [batch_size, num_tokens, emb_size]
+        x = tok_embeds + pos_embeds  # 形状 [batch_size, num_tokens, emb_size]
         x = self.drop_emb(x)
         x = self.trf_blocks(x)
         x = self.final_norm(x)
@@ -105,32 +105,32 @@ class GPTModel(nn.Module):
 
 
 def generate_text_simple(model, idx, max_new_tokens, context_size):
-    # idx is (B, T) array of indices in the current context
+    # idx是当前上下文中索引的(B, T)数组
     for _ in range(max_new_tokens):
 
-        # Crop current context if it exceeds the supported context size
-        # E.g., if LLM supports only 5 tokens, and the context size is 10
-        # then only the last 5 tokens are used as context
+        # 如果当前上下文超过支持的上下文大小，则裁剪
+        # 例如，如果LLM只支持5个token，而上下文大小是10
+        # 那么只有最后5个token用作上下文
         idx_cond = idx[:, -context_size:]
 
-        # Get the predictions
+        # 获取预测
         with torch.no_grad():
             logits = model(idx_cond)
 
-        # Focus only on the last time step
-        # (batch, n_token, vocab_size) becomes (batch, vocab_size)
+        # 只关注最后一个时间步
+        # (batch, n_token, vocab_size) 变为 (batch, vocab_size)
         logits = logits[:, -1, :]
 
-        # Get the idx of the vocab entry with the highest logits value
+        # 获取具有最高logits值的词汇表条目的索引
         idx_next = torch.argmax(logits, dim=-1, keepdim=True)  # (batch, 1)
 
-        # Append sampled index to the running sequence
+        # 将采样的索引追加到运行序列
         idx = torch.cat((idx, idx_next), dim=1)  # (batch, n_tokens+1)
 
     return idx
 
 ######################
-# Bonus
+# 附加功能
 ######################
 
 
@@ -162,36 +162,35 @@ class TransformerBlockFast(nn.Module):
         self.drop_shortcut = nn.Dropout(cfg["drop_rate"])
 
     def forward(self, x):
-        # Shortcut connection for attention block
+        # 注意力块的快捷连接
         shortcut = x
         x = self.norm1(x)
-        x = self.att(x)   # Shape [batch_size, num_tokens, emb_size]
+        x = self.att(x)   # 形状 [batch_size, num_tokens, emb_size]
         x = self.drop_shortcut(x)
-        x = x + shortcut  # Add the original input back
+        x = x + shortcut  # 添加原始输入
 
-        # Shortcut connection for feed-forward block
+        # 前馈块的快捷连接
         shortcut = x
         x = self.norm2(x)
         x = self.ff(x)
         x = self.drop_shortcut(x)
-        x = x + shortcut  # Add the original input back
+        x = x + shortcut  # 添加原始输入
 
         return x
 
 
 class GPTModelFast(nn.Module):
     """
-    A faster variant of GPTModel optimized for training speed.
+    GPTModel的更快变体，针对训练速度进行了优化。
 
-    This version is only marginally faster on CPU (~1.02x) but significantly
-    faster on GPU (~2.05x) during training, thanks to optimized CUDA kernels
-    and FlashAttention support.
+    该版本在CPU上只稍快一些（约1.02倍），但在训练期间在GPU上要快得多（约2.05倍），
+    这要归功于优化的CUDA内核和FlashAttention支持。
 
-    Key differences from the original GPTModel:
-    1. Uses PyTorch's built-in LayerNorm instead of a custom implementation.
-    2. Uses PyTorch's built-in GELU instead of a custom implementation.
-    3. Uses PyTorch's scaled_dot_product_attention instead of a custom MultiHeadAttention.
-    4. Automatically enables FlashAttention on compatible GPUs.
+    与原始GPTModel的主要区别：
+    1. 使用PyTorch内置的LayerNorm而不是自定义实现。
+    2. 使用PyTorch内置的GELU而不是自定义实现。
+    3. 使用PyTorch的scaled_dot_product_attention而不是自定义MultiHeadAttention。
+    4. 在兼容的GPU上自动启用FlashAttention。
     """
     def __init__(self, cfg):
         super().__init__()

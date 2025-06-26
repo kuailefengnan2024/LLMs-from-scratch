@@ -1,7 +1,7 @@
-# Copyright (c) Sebastian Raschka under Apache License 2.0 (see LICENSE.txt).
-# Source for "Build a Large Language Model From Scratch"
+# 版权所有 (c) Sebastian Raschka，遵循Apache License 2.0 (详见LICENSE.txt)。
+# 来源于 "从零开始构建大语言模型"
 #   - https://www.manning.com/books/build-a-large-language-model-from-scratch
-# Code: https://github.com/rasbt/LLMs-from-scratch
+# 代码: https://github.com/rasbt/LLMs-from-scratch
 
 
 import urllib.request
@@ -17,47 +17,47 @@ import pandas as pd
 
 def download_and_unzip_spam_data(url, zip_path, extracted_path, data_file_path):
     if data_file_path.exists():
-        print(f"{data_file_path} already exists. Skipping download and extraction.")
+        print(f"{data_file_path} 已存在。跳过下载和解压。")
         return
 
-    # Downloading the file
+    # 下载文件
     with urllib.request.urlopen(url) as response:
         with open(zip_path, "wb") as out_file:
             out_file.write(response.read())
 
-    # Unzipping the file
+    # 解压文件
     with zipfile.ZipFile(zip_path, "r") as zip_ref:
         zip_ref.extractall(extracted_path)
 
-    # Add .tsv file extension
+    # 添加.tsv文件扩展名
     original_file_path = Path(extracted_path) / "SMSSpamCollection"
     os.rename(original_file_path, data_file_path)
-    print(f"File downloaded and saved as {data_file_path}")
+    print(f"文件已下载并保存为 {data_file_path}")
 
 
 def create_balanced_dataset(df):
 
-    # Count the instances of "spam"
+    # 计算"spam"的实例数
     num_spam = df[df["Label"] == "spam"].shape[0]
 
-    # Randomly sample "ham" instances to match the number of "spam" instances
+    # 随机采样"ham"实例以匹配"spam"实例的数量
     ham_subset = df[df["Label"] == "ham"].sample(num_spam, random_state=123)
 
-    # Combine ham "subset" with "spam"
+    # 将ham"子集"与"spam"组合
     balanced_df = pd.concat([ham_subset, df[df["Label"] == "spam"]])
 
     return balanced_df
 
 
 def random_split(df, train_frac, validation_frac):
-    # Shuffle the entire DataFrame
+    # 打乱整个DataFrame
     df = df.sample(frac=1, random_state=123).reset_index(drop=True)
 
-    # Calculate split indices
+    # 计算分割索引
     train_end = int(len(df) * train_frac)
     validation_end = train_end + int(len(df) * validation_frac)
 
-    # Split the DataFrame
+    # 分割DataFrame
     train_df = df[:train_end]
     validation_df = df[train_end:validation_end]
     test_df = df[validation_end:]
@@ -69,7 +69,7 @@ class SpamDataset(Dataset):
     def __init__(self, csv_file, tokenizer, max_length=None, pad_token_id=50256):
         self.data = pd.read_csv(csv_file)
 
-        # Pre-tokenize texts
+        # 预分词文本
         self.encoded_texts = [
             tokenizer.encode(text) for text in self.data["Text"]
         ]
@@ -78,13 +78,13 @@ class SpamDataset(Dataset):
             self.max_length = self._longest_encoded_length()
         else:
             self.max_length = max_length
-            # Truncate sequences if they are longer than max_length
+            # 如果序列长度超过max_length则截断
             self.encoded_texts = [
                 encoded_text[:self.max_length]
                 for encoded_text in self.encoded_texts
             ]
 
-        # Pad sequences to the longest sequence
+        # 将序列填充到最长序列
         self.encoded_texts = [
             encoded_text + [pad_token_id] * (self.max_length - len(encoded_text))
             for encoded_text in self.encoded_texts
@@ -108,8 +108,8 @@ class SpamDataset(Dataset):
             if encoded_length > max_length:
                 max_length = encoded_length
         return max_length
-        # Note: A more pythonic version to implement this method
-        # is the following, which is also used in the next chapter:
+        # 注释：实现此方法的更Pythonic版本如下，
+        # 这也在下一章中使用：
         # return max(len(encoded_text) for encoded_text in self.encoded_texts)
 
 
@@ -126,7 +126,7 @@ def calc_accuracy_loader(data_loader, model, device, num_batches=None):
             input_batch, target_batch = input_batch.to(device), target_batch.to(device)
 
             with torch.no_grad():
-                logits = model(input_batch)[:, -1, :]  # Logits of last output token
+                logits = model(input_batch)[:, -1, :]  # 最后输出token的logits
             predicted_labels = torch.argmax(logits, dim=-1)
 
             num_examples += predicted_labels.shape[0]
@@ -138,7 +138,7 @@ def calc_accuracy_loader(data_loader, model, device, num_batches=None):
 
 def calc_loss_batch(input_batch, target_batch, model, device):
     input_batch, target_batch = input_batch.to(device), target_batch.to(device)
-    logits = model(input_batch)[:, -1, :]  # Logits of last output token
+    logits = model(input_batch)[:, -1, :]  # 最后输出token的logits
     loss = torch.nn.functional.cross_entropy(logits, target_batch)
     return loss
 
@@ -150,8 +150,8 @@ def calc_loss_loader(data_loader, model, device, num_batches=None):
     elif num_batches is None:
         num_batches = len(data_loader)
     else:
-        # Reduce the number of batches to match the total number of batches in the data loader
-        # if num_batches exceeds the number of batches in the data loader
+        # 如果num_batches超过数据加载器中的批次数量，
+        # 则减少批次数量以匹配数据加载器中的总批次数
         num_batches = min(num_batches, len(data_loader))
     for i, (input_batch, target_batch) in enumerate(data_loader):
         if i < num_batches:
@@ -173,23 +173,23 @@ def evaluate_model(model, train_loader, val_loader, device, eval_iter):
 
 def train_classifier_simple(model, train_loader, val_loader, optimizer, device, num_epochs,
                             eval_freq, eval_iter):
-    # Initialize lists to track losses and examples seen
+    # 初始化列表以跟踪损失和已见样本
     train_losses, val_losses, train_accs, val_accs = [], [], [], []
     examples_seen, global_step = 0, -1
 
-    # Main training loop
+    # 主训练循环
     for epoch in range(num_epochs):
-        model.train()  # Set model to training mode
+        model.train()  # 将模型设置为训练模式
 
         for input_batch, target_batch in train_loader:
-            optimizer.zero_grad()  # Reset loss gradients from previous batch iteration
+            optimizer.zero_grad()  # 重置前一批次迭代的损失梯度
             loss = calc_loss_batch(input_batch, target_batch, model, device)
-            loss.backward()  # Calculate loss gradients
-            optimizer.step()  # Update model weights using loss gradients
-            examples_seen += input_batch.shape[0]  # New: track examples instead of tokens
+            loss.backward()  # 计算损失梯度
+            optimizer.step()  # 使用损失梯度更新模型权重
+            examples_seen += input_batch.shape[0]  # 新增：跟踪样本而不是token
             global_step += 1
 
-            # Optional evaluation step
+            # 可选的评估步骤
             if global_step % eval_freq == 0:
                 train_loss, val_loss = evaluate_model(
                     model, train_loader, val_loader, device, eval_iter)
@@ -198,11 +198,11 @@ def train_classifier_simple(model, train_loader, val_loader, optimizer, device, 
                 print(f"Ep {epoch+1} (Step {global_step:06d}): "
                       f"Train loss {train_loss:.3f}, Val loss {val_loss:.3f}")
 
-        # Calculate accuracy after each epoch
+        # 每个epoch后计算准确率
         train_accuracy = calc_accuracy_loader(train_loader, model, device, num_batches=eval_iter)
         val_accuracy = calc_accuracy_loader(val_loader, model, device, num_batches=eval_iter)
-        print(f"Training accuracy: {train_accuracy*100:.2f}% | ", end="")
-        print(f"Validation accuracy: {val_accuracy*100:.2f}%")
+        print(f"训练准确率: {train_accuracy*100:.2f}% | ", end="")
+        print(f"验证准确率: {val_accuracy*100:.2f}%")
         train_accs.append(train_accuracy)
         val_accs.append(val_accuracy)
 
@@ -212,19 +212,19 @@ def train_classifier_simple(model, train_loader, val_loader, optimizer, device, 
 def plot_values(epochs_seen, examples_seen, train_values, val_values, label="loss"):
     fig, ax1 = plt.subplots(figsize=(5, 3))
 
-    # Plot training and validation loss against epochs
-    ax1.plot(epochs_seen, train_values, label=f"Training {label}")
-    ax1.plot(epochs_seen, val_values, linestyle="-.", label=f"Validation {label}")
+    # 绘制训练和验证损失与epoch的关系
+    ax1.plot(epochs_seen, train_values, label=f"训练{label}")
+    ax1.plot(epochs_seen, val_values, linestyle="-.", label=f"验证{label}")
     ax1.set_xlabel("Epochs")
     ax1.set_ylabel(label.capitalize())
     ax1.legend()
 
-    # Create a second x-axis for examples seen
-    ax2 = ax1.twiny()  # Create a second x-axis that shares the same y-axis
-    ax2.plot(examples_seen, train_values, alpha=0)  # Invisible plot for aligning ticks
-    ax2.set_xlabel("Examples seen")
+    # 为已见样本创建第二个x轴
+    ax2 = ax1.twiny()  # 创建一个共享相同y轴的第二个x轴
+    ax2.plot(examples_seen, train_values, alpha=0)  # 用于对齐刻度的不可见图
+    ax2.set_xlabel("已见样本数")
 
-    fig.tight_layout()  # Adjust layout to make room
+    fig.tight_layout()  # 调整布局以留出空间
     plt.savefig(f"{label}-plot.pdf")
     plt.show()
 
@@ -232,23 +232,23 @@ def plot_values(epochs_seen, examples_seen, train_values, val_values, label="los
 def classify_review(text, model, tokenizer, device, max_length=None, pad_token_id=50256):
     model.eval()
 
-    # Prepare inputs to the model
+    # 准备模型输入
     input_ids = tokenizer.encode(text)
     supported_context_length = model.pos_emb.weight.shape[0]
-    # Note: In the book, this was originally written as pos_emb.weight.shape[1] by mistake
-    # It didn't break the code but would have caused unnecessary truncation (to 768 instead of 1024)
+    # 注释：在书中，这原本错误地写成了pos_emb.weight.shape[1]
+    # 它没有破坏代码，但会导致不必要的截断（截断到768而不是1024）
 
-    # Truncate sequences if they too long
+    # 如果序列太长则截断
     input_ids = input_ids[:min(max_length, supported_context_length)]
 
-    # Pad sequences to the longest sequence
+    # 将序列填充到最长序列
     input_ids += [pad_token_id] * (max_length - len(input_ids))
-    input_tensor = torch.tensor(input_ids, device=device).unsqueeze(0) # add batch dimension
+    input_tensor = torch.tensor(input_ids, device=device).unsqueeze(0) # 添加批次维度
 
-    # Model inference
+    # 模型推理
     with torch.no_grad():
-        logits = model(input_tensor)[:, -1, :]  # Logits of the last output token
+        logits = model(input_tensor)[:, -1, :]  # 最后输出token的logits
     predicted_label = torch.argmax(logits, dim=-1).item()
 
-    # Return the classified result
+    # 返回分类结果
     return "spam" if predicted_label == 1 else "not spam"

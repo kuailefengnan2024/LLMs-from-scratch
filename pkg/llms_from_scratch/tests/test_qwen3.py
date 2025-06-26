@@ -24,11 +24,11 @@ import torch.nn as nn
 
 
 class Qwen3RMSNorm(nn.Module):
-    # Source: https://github.com/huggingface/transformers/blob/main/src/transformers/models/qwen3/modeling_qwen3.py
-    # License: Apache License, Version 2.0 (see file above)
+    # 来源: https://github.com/huggingface/transformers/blob/main/src/transformers/models/qwen3/modeling_qwen3.py
+    # 许可证: Apache License, Version 2.0 (见上述文件)
     def __init__(self, hidden_size, eps=1e-6):
         """
-        Qwen3RMSNorm is equivalent to T5LayerNorm
+        Qwen3RMSNorm 等价于 T5LayerNorm
         """
         super().__init__()
         self.weight = nn.Parameter(torch.ones(hidden_size))
@@ -54,30 +54,30 @@ def test_rope():
 
     from transformers.models.qwen3.modeling_qwen3 import Qwen3RotaryEmbedding, apply_rotary_pos_emb
 
-    # Settings
+    # 设置参数
     batch_size = 1
     context_len = 8192
     num_heads = 4
     head_dim = 16
     rope_theta = 1_000_000
 
-    # Instantiate RoPE parameters
+    # 实例化RoPE参数
     cos, sin = compute_rope_params(
         head_dim=head_dim,
         theta_base=rope_theta,
         context_length=context_len,
     )
 
-    # Dummy query and key tensors
+    # 虚拟查询和键张量
     torch.manual_seed(123)
     queries = torch.randn(batch_size, num_heads, context_len, head_dim)
     keys = torch.randn(batch_size, num_heads, context_len, head_dim)
 
-    # Apply rotary position embeddings
+    # 应用旋转位置嵌入
     queries_rot = apply_rope(queries, cos, sin)
     keys_rot = apply_rope(keys, cos, sin)
 
-    # Generate reference RoPE via HF
+    # 通过HF生成参考RoPE
     class RoPEConfig:
         rope_type = "qwen3"
         factor = 1.0
@@ -102,7 +102,7 @@ def test_rope():
 
 @pytest.fixture(scope="session")
 def qwen3_weights_path(tmp_path_factory):
-    """Creates and saves a deterministic Llama3 model for testing."""
+    """创建并保存确定性的Llama3模型用于测试。"""
     path = tmp_path_factory.mktemp("models") / "llama3_test_weights.pt"
 
     if not path.exists():
@@ -117,7 +117,7 @@ def qwen3_weights_path(tmp_path_factory):
 @pytest.mark.parametrize("generate_fn", [generate_text_simple, generate_text_simple_cached])
 def test_model_variants(ModelClass, qwen3_weights_path, generate_fn):
 
-    # Skip incompatible combinations
+    # 跳过不兼容的组合
     if generate_fn is generate_text_simple and getattr(ModelClass, "reset_kv_cache", False):
         return
     if generate_fn is generate_text_simple_cached and not getattr(ModelClass, "reset_kv_cache", False):
@@ -134,9 +134,9 @@ def test_model_variants(ModelClass, qwen3_weights_path, generate_fn):
     encoded = tokenizer.encode(start_context)
     encoded_tensor = torch.tensor(encoded).unsqueeze(0)
 
-    print(f"\n{50*'='}\n{22*' '}IN\n{50*'='}")
-    print("\nInput text:", start_context)
-    print("Encoded input text:", encoded)
+    print(f"\n{50*'='}\n{22*' '}输入\n{50*'='}")
+    print("\n输入文本:", start_context)
+    print("编码的输入文本:", encoded)
     print("encoded_tensor.shape:", encoded_tensor.shape)
 
     out = generate_text_simple(
@@ -145,7 +145,7 @@ def test_model_variants(ModelClass, qwen3_weights_path, generate_fn):
         max_new_tokens=5,
         context_size=QWEN_CONFIG_06_B["context_length"]
     )
-    print("Encoded output text:", out)
+    print("编码的输出文本:", out)
     expect = torch.tensor([
         [43, 2543, 292, 4483, 115206, 459, 43010, 104223, 55553]
     ])
@@ -162,7 +162,7 @@ def test_rmsnorm_equivalence():
     rms_norm = RMSNorm(hidden_size)
     ref_norm = Qwen3RMSNorm(hidden_size)
 
-    # Sync weights
+    # 同步权重
     with torch.no_grad():
         ref_norm.weight.copy_(ref_norm.weight)
 
