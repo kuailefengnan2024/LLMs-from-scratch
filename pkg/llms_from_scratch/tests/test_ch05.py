@@ -18,7 +18,7 @@ from torch.utils.data import Subset, DataLoader
 
 GPT_CONFIG_124M = {
     "vocab_size": 50257,
-    "context_length": 256,  # Shortened for test speed
+    "context_length": 256,  # 为了测试速度而缩短
     "emb_dim": 768,
     "n_heads": 12,
     "n_layers": 12,
@@ -40,7 +40,7 @@ def test_train_simple(tmp_path, ModelClass):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     ##############################
-    # Download data if necessary
+    # 如有必要，下载数据
     ##############################
     file_path = tmp_path / "the-verdict.txt"
     url = "https://raw.githubusercontent.com/rasbt/LLMs-from-scratch/main/ch02/01_main-chapter-code/the-verdict.txt"
@@ -55,7 +55,7 @@ def test_train_simple(tmp_path, ModelClass):
             text_data = f.read()
 
     ##############################
-    # Set up dataloaders
+    # 设置数据加载器
     ##############################
     train_ratio = 0.90
     split_idx = int(train_ratio * len(text_data))
@@ -80,14 +80,14 @@ def test_train_simple(tmp_path, ModelClass):
         num_workers=0
     )
 
-    # Limit to 1 batch for speed
+    # 为了速度限制为1个批次
     train_subset = Subset(train_loader.dataset, range(1))
     one_batch_train_loader = DataLoader(train_subset, batch_size=1)
     val_subset = Subset(val_loader.dataset, range(1))
     one_batch_val_loader = DataLoader(val_subset, batch_size=1)
 
     ##############################
-    # Train model
+    # 训练模型
     ##############################
     model = ModelClass(GPT_CONFIG_124M)
     model.to(device)

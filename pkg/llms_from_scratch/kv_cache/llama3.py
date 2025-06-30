@@ -15,15 +15,15 @@ from tiktoken.load import load_tiktoken_bpe
 
 
 LLAMA32_CONFIG_1B = {
-    "vocab_size": 128_256,           # Vocabulary size
-    "context_length": 131_072,       # Context length that was used to train the model
-    "emb_dim": 2048,                 # Embedding dimension
-    "n_heads": 32,                   # Number of attention heads
-    "n_layers": 16,                  # Number of layers
-    "hidden_dim": 8192,              # Size of the intermediate dimension in FeedForward
-    "n_kv_groups": 8,                # Key-Value groups for grouped-query attention
-    "rope_base": 500_000.0,          # The base in RoPE's "theta"
-    "dtype": torch.bfloat16,         # Lower-precision dtype to reduce memory usage
+    "vocab_size": 128_256,           # 词汇表大小
+    "context_length": 131_072,       # 训练模型时使用的上下文长度
+    "emb_dim": 2048,                 # 嵌入维度
+    "n_heads": 32,                   # 注意力头数
+    "n_layers": 16,                  # 层数
+    "hidden_dim": 8192,              # FeedForward中间维度的大小
+    "n_kv_groups": 8,                # 分组查询注意力的键值组
+    "rope_base": 500_000.0,          # RoPE的"theta"基数
+    "dtype": torch.bfloat16,         # 降低精度的数据类型以减少内存使用
     "rope_freq": {                   # RoPE frequency scaling
         "factor": 32.0,
         "low_freq_factor": 1.0,
@@ -42,7 +42,7 @@ LLAMA32_CONFIG_3B = {
     "n_kv_groups": 8,                # Key-Value groups for grouped-query attention
     "rope_base": 500_000.0,          # The base in RoPE's "theta"
     "dtype": torch.bfloat16,         # Lower-precision dtype to reduce memory usage
-    "rope_freq": {                   # RoPE frequency scaling
+    "rope_freq": {                   # RoPE频率缩放
         "factor": 32.0,
         "low_freq_factor": 1.0,
         "high_freq_factor": 4.0,
@@ -313,7 +313,7 @@ def apply_rope(x, cos, sin, offset=9):
 
 
 class Llama3Tokenizer:
-    """Thin wrapper around tiktoken that keeps track of Llama-3 special IDs."""
+    """tiktoken的薄包装器，跟踪Llama-3特殊ID。"""
     def __init__(self, model_path):
         if not os.path.isfile(model_path):
             raise FileNotFoundError(model_path)
@@ -364,7 +364,7 @@ class ChatFormat:
         self.default_system = default_system
 
     def _header(self, role):
-        """Encode <|start_header_id|>role<|end_header_id|>\n\n"""
+        """编码 <|start_header_id|>role<|end_header_id|>\n\n"""
         return (
             [self.tok.special["<|start_header_id|>"]]
             + self.tok.encode(role)

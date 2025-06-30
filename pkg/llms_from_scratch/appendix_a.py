@@ -1,7 +1,7 @@
 # Copyright (c) Sebastian Raschka under Apache License 2.0 (see LICENSE.txt).
-# Source for "Build a Large Language Model From Scratch"
+# 来源："从零开始构建大型语言模型"
 #   - https://www.manning.com/books/build-a-large-language-model-from-scratch
-# Code: https://github.com/rasbt/LLMs-from-scratch
+# 代码：https://github.com/rasbt/LLMs-from-scratch
 
 import torch
 from torch.utils.data import Dataset
@@ -13,15 +13,15 @@ class NeuralNetwork(torch.nn.Module):
 
         self.layers = torch.nn.Sequential(
 
-            # 1st hidden layer
+            # 第一个隐藏层
             torch.nn.Linear(num_inputs, 30),
             torch.nn.ReLU(),
 
-            # 2nd hidden layer
+            # 第二个隐藏层
             torch.nn.Linear(30, 20),
             torch.nn.ReLU(),
 
-            # output layer
+            # 输出层
             torch.nn.Linear(20, num_outputs),
         )
 

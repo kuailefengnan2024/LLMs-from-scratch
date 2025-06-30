@@ -1,7 +1,7 @@
 # Copyright (c) Sebastian Raschka under Apache License 2.0 (see LICENSE.txt).
-# Source for "Build a Large Language Model From Scratch"
+# 来源："从零开始构建大型语言模型"
 #   - https://www.manning.com/books/build-a-large-language-model-from-scratch
-# Code: https://github.com/rasbt/LLMs-from-scratch
+# 代码：https://github.com/rasbt/LLMs-from-scratch
 
 from .ch05 import calc_loss_batch, evaluate_model, generate_and_print_sample
 
@@ -27,13 +27,13 @@ def train_model(model, train_loader, val_loader, optimizer, device,
     train_losses, val_losses, track_tokens_seen, track_lrs = [], [], [], []
     tokens_seen, global_step = 0, -1
 
-    # Retrieve the maximum learning rate from the optimizer
+    # 从优化器中获取最大学习率
     peak_lr = optimizer.param_groups[0]["lr"]
 
-    # Calculate the total number of iterations in the training process
+    # 计算训练过程中的总迭代次数
     total_training_steps = len(train_loader) * n_epochs
 
-    # Calculate the learning rate increment during the warmup phase
+    # 计算预热阶段的学习率增量
     lr_increment = (peak_lr - initial_lr) / warmup_steps
 
     for epoch in range(n_epochs):
@@ -42,37 +42,37 @@ def train_model(model, train_loader, val_loader, optimizer, device,
             optimizer.zero_grad()
             global_step += 1
 
-            # Adjust the learning rate based on the current phase (warmup or cosine annealing)
+            # 根据当前阶段（预热或余弦退火）调整学习率
             if global_step < warmup_steps:
-                # Linear warmup
+                # 线性预热
                 lr = initial_lr + global_step * lr_increment
             else:
-                # Cosine annealing after warmup
+                # 预热后的余弦退火
                 progress = ((global_step - warmup_steps) /
                             (total_training_steps - warmup_steps))
                 lr = min_lr + (peak_lr - min_lr) * 0.5 * (1 + math.cos(math.pi * progress))
 
-            # Apply the calculated learning rate to the optimizer
+            # 将计算得到的学习率应用到优化器
             for param_group in optimizer.param_groups:
                 param_group["lr"] = lr
-            track_lrs.append(lr)  # Store the current learning rate
+            track_lrs.append(lr)  # 存储当前学习率
 
-            # Calculate and backpropagate the loss
+            # 计算并反向传播损失
             loss = calc_loss_batch(input_batch, target_batch, model, device)
             loss.backward()
 
-            # Apply gradient clipping after the warmup phase to avoid exploding gradients
+            # 在预热阶段后应用梯度裁剪以避免梯度爆炸
             if orig_book_version:
                 if global_step > warmup_steps:
                     torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
             else:
-                if global_step >= warmup_steps:  # the book originally used global_step > warmup_steps, which led to a skipped clipping step after warmup
+                if global_step >= warmup_steps:  # 书中最初使用 global_step > warmup_steps，导致预热后跳过了一个裁剪步骤
                     torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
 
             optimizer.step()
             tokens_seen += input_batch.numel()
 
-            # Periodically evaluate the model on the training and validation sets
+            # 定期在训练集和验证集上评估模型
             if global_step % eval_freq == 0:
                 train_loss, val_loss = evaluate_model(
                     model, train_loader, val_loader,
@@ -81,12 +81,12 @@ def train_model(model, train_loader, val_loader, optimizer, device,
                 train_losses.append(train_loss)
                 val_losses.append(val_loss)
                 track_tokens_seen.append(tokens_seen)
-                # Print the current losses
+                # 打印当前损失
                 print(f"Ep {epoch+1} (Iter {global_step:06d}): "
                       f"Train loss {train_loss:.3f}, "
                       f"Val loss {val_loss:.3f}")
 
-        # Generate and print a sample from the model to monitor progress
+        # 生成并打印模型样本以监控进度
         generate_and_print_sample(
             model, tokenizer, device, start_context
         )

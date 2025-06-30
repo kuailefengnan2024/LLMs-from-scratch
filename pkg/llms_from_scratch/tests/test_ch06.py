@@ -22,7 +22,7 @@ from torch.utils.data import DataLoader, Subset
 def test_train_classifier(tmp_path):
 
     ########################################
-    # Download and prepare dataset
+    # 下载并准备数据集
     ########################################
 
     url = "https://archive.ics.uci.edu/static/public/228/sms+spam+collection.zip"
@@ -51,7 +51,7 @@ def test_train_classifier(tmp_path):
     test_df.to_csv(tmp_path / "test.csv", index=None)
 
     ########################################
-    # Create data loaders
+    # 创建数据加载器
     ########################################
     tokenizer = tiktoken.get_encoding("gpt2")
 
@@ -88,10 +88,10 @@ def test_train_classifier(tmp_path):
     )
 
     ########################################
-    # Load pretrained model
+    # 加载预训练模型
     ########################################
 
-    # Small GPT model for testing purposes
+    # 用于测试目的的小型GPT模型
     BASE_CONFIG = {
         "vocab_size": 50257,
         "context_length": 120,
@@ -106,7 +106,7 @@ def test_train_classifier(tmp_path):
     device = "cpu"
 
     ########################################
-    # Modify and pretrained model
+    # 修改和预训练模型
     ########################################
 
     for param in model.parameters():
@@ -125,7 +125,7 @@ def test_train_classifier(tmp_path):
         param.requires_grad = True
 
     ########################################
-    # Finetune modified model
+    # 微调修改后的模型
     ########################################
 
     torch.manual_seed(123)

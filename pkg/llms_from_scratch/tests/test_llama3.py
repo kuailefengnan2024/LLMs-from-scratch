@@ -23,12 +23,12 @@ import torch
 
 
 class LitGPTRMSNorm(torch.nn.Module):
-    """Root Mean Square Layer Normalization.
+    """均方根层归一化。
 
-    From https://github.com/Lightning-AI/litgpt/blob/main/litgpt/model.py
-    Apache License 2.0-Clause License: https://github.com/Lightning-AI/litgpt/blob/main/LICENSE
+    来源于 https://github.com/Lightning-AI/litgpt/blob/main/litgpt/model.py
+    Apache License 2.0 许可证: https://github.com/Lightning-AI/litgpt/blob/main/LICENSE
 
-    Derived from https://github.com/bzhangGo/rmsnorm/blob/master/rmsnorm_torch.py. BSD 3-Clause License:
+    派生自 https://github.com/bzhangGo/rmsnorm/blob/master/rmsnorm_torch.py。BSD 3-Clause 许可证:
     https://github.com/bzhangGo/rmsnorm/blob/master/LICENSE.
     """
 
@@ -42,7 +42,7 @@ class LitGPTRMSNorm(torch.nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         dtype = x.dtype
         x = x.float()
-        # NOTE: the original RMSNorm paper implementation is not equivalent
+        # 注意：原始RMSNorm论文实现并不等效
         norm_x = torch.mean(x * x, dim=self.dim, keepdim=True)
         x_normed = x * torch.rsqrt(norm_x + self.eps)
         weight = (1 + self.weight) if self.add_unit_offset else self.weight
@@ -60,7 +60,7 @@ def test_rope():
 
     from transformers.models.llama.modeling_llama import LlamaRotaryEmbedding, apply_rotary_pos_emb
 
-    # Settings
+    # 设置
     batch_size = 1
     context_len = 8192
     num_heads = 4
@@ -74,7 +74,7 @@ def test_rope():
         "original_context_length": 8192,
     }
 
-    # Instantiate RoPE parameters
+    # 实例化RoPE参数
     cos, sin = compute_rope_params(
         head_dim=head_dim,
         theta_base=rope_theta,
@@ -82,16 +82,16 @@ def test_rope():
         freq_config=rope_config,
     )
 
-    # Dummy query and key tensors
+    # 虚拟查询和键张量
     torch.manual_seed(123)
     queries = torch.randn(batch_size, num_heads, context_len, head_dim)
     keys = torch.randn(batch_size, num_heads, context_len, head_dim)
 
-    # Apply rotary position embeddings
+    # 应用旋转位置嵌入
     queries_rot = apply_rope(queries, cos, sin)
     keys_rot = apply_rope(keys, cos, sin)
 
-    # Generate reference RoPE via HF
+    # 通过HF生成参考RoPE
     hf_rope_params = {
         "factor": 8.0,
         "low_freq_factor": 1.0,
@@ -124,13 +124,13 @@ def test_rope():
 
 
 GPT_CONFIG_124M = {
-    "vocab_size": 50257,     # Vocabulary size
-    "context_length": 1024,  # Context length
-    "emb_dim": 768,          # Embedding dimension
-    "n_heads": 12,           # Number of attention heads
-    "n_layers": 12,          # Number of layers
-    "drop_rate": 0.1,        # Dropout rate
-    "qkv_bias": False        # Query-Key-Value bias
+    "vocab_size": 50257,     # 词汇表大小
+    "context_length": 1024,  # 上下文长度
+    "emb_dim": 768,          # 嵌入维度
+    "n_heads": 12,           # 注意力头数
+    "n_layers": 12,          # 层数
+    "drop_rate": 0.1,        # Dropout率
+    "qkv_bias": False        # 查询-键-值偏置
 }
 
 
@@ -151,28 +151,28 @@ def test_grouped_query_attention_equivalence():
         }
     )
 
-    # Causal mask for the slow version
+    # 慢速版本的因果掩码
     mask = torch.triu(torch.ones(t, t, dtype=torch.bool), diagonal=1)
 
     attn1 = GroupedQueryAttention(d_in, d_out, num_heads, num_kv_groups)
     attn2 = GroupedQueryAttentionFast(d_in, d_out, num_heads, num_kv_groups)
 
-    # Copy weights to make both models identical
+    # 复制权重使两个模型相同
     attn2.load_state_dict(attn1.state_dict())
 
-    # Run both
+    # 运行两个版本
     y1 = attn1(x, mask, cos, sin)
     y2 = attn2(x, cos, sin)
 
-    # Compare outputs
+    # 比较输出
     max_diff = (y1 - y2).abs().max().item()
-    print(f"Max difference between slow and fast outputs: {max_diff:.4e}")
+    print(f"慢速和快速输出之间的最大差异: {max_diff:.4e}")
     assert torch.allclose(y1, y2, atol=1e-4)
 
 
 @pytest.fixture(scope="session")
 def llama3_weights_path(tmp_path_factory):
-    """Creates and saves a deterministic Llama3 model for testing."""
+    """创建并保存确定性的Llama3模型用于测试。"""
     path = tmp_path_factory.mktemp("models") / "llama3_test_weights.pt"
 
     if not path.exists():
@@ -185,13 +185,13 @@ def llama3_weights_path(tmp_path_factory):
 
 @pytest.mark.skipif(
     os.getenv("GITHUB_ACTIONS") == "true",
-    reason="Skipping in GitHub Actions due to compute or memory constraints"
+    reason="由于计算或内存限制在GitHub Actions中跳过"
 )
 @pytest.mark.parametrize("ModelClass", [Llama3Model, Llama3ModelKV])
 @pytest.mark.parametrize("generate_fn", [generate_text_simple, generate_text_simple_cached])
 def test_model_variants(ModelClass, generate_fn, llama3_weights_path):
 
-    # Skip incompatible combinations
+    # 跳过不兼容的组合
     if generate_fn is generate_text_simple and getattr(ModelClass, "reset_kv_cache", False):
         return
     if generate_fn is generate_text_simple_cached and not getattr(ModelClass, "reset_kv_cache", False):
@@ -208,9 +208,9 @@ def test_model_variants(ModelClass, generate_fn, llama3_weights_path):
     encoded = tokenizer.encode(start_context)
     encoded_tensor = torch.tensor(encoded).unsqueeze(0)
 
-    print(f"\n{50*'='}\n{22*' '}IN\n{50*'='}")
-    print("\nInput text:", start_context)
-    print("Encoded input text:", encoded)
+    print(f"\n{50*'='}\n{22*' '}输入\n{50*'='}")
+    print("\n输入文本:", start_context)
+    print("编码后的输入文本:", encoded)
     print("encoded_tensor.shape:", encoded_tensor.shape)
 
     out = generate_fn(
@@ -219,7 +219,7 @@ def test_model_variants(ModelClass, generate_fn, llama3_weights_path):
         max_new_tokens=5,
         context_size=LLAMA32_CONFIG_1B["context_length"]
     )
-    print("Encoded output text:", out)
+    print("编码后的输出文本:", out)
     expect = torch.tensor([
         [43, 2543, 292, 4483, 100383, 8113, 76873, 42175, 72641]
     ])
@@ -236,7 +236,7 @@ def test_rmsnorm_equivalence():
     rms_norm = torch.nn.RMSNorm(hidden_size, eps=1e-6)
     lit_norm = LitGPTRMSNorm(hidden_size)
 
-    # Sync weights
+    # 同步权重
     with torch.no_grad():
         lit_norm.weight.copy_(lit_norm.weight)
 
