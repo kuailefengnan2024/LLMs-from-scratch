@@ -1,7 +1,7 @@
-# Copyright (c) Sebastian Raschka under Apache License 2.0 (see LICENSE.txt).
-# Source for "Build a Large Language Model From Scratch"
+# 版权所有 (c) Sebastian Raschka，基于 Apache License 2.0 许可证（见 LICENSE.txt）。
+# 来源：《从零开始构建大型语言模型》
 #   - https://www.manning.com/books/build-a-large-language-model-from-scratch
-# Code: https://github.com/rasbt/LLMs-from-scratch
+# 代码：https://github.com/rasbt/LLMs-from-scratch
 
 from .utils import KVCache   # noqa: F401
 
@@ -12,7 +12,7 @@ from pathlib import Path
 import torch
 import torch.nn as nn
 
-# 0.6B model
+# 0.6B 模型
 QWEN_CONFIG_06_B = {
     "vocab_size": 151_936,           # 词汇表大小
     "context_length": 40_960,        # 训练模型时使用的上下文长度
@@ -146,14 +146,14 @@ class GroupedQueryAttention(nn.Module):
         self, d_in, num_heads, num_kv_groups, head_dim=None, qk_norm=False, dtype=None
     ):
         super().__init__()
-        assert num_heads % num_kv_groups == 0, "num_heads must be divisible by num_kv_groups"
+        assert num_heads % num_kv_groups == 0, "num_heads必须能被num_kv_groups整除"
 
         self.num_heads = num_heads
         self.num_kv_groups = num_kv_groups
         self.group_size = num_heads // num_kv_groups
 
         if head_dim is None:
-            assert d_in % num_heads == 0, "`d_in` must be divisible by `num_heads` if `head_dim` is not set"
+            assert d_in % num_heads == 0, "如果未设置`head_dim`，则`d_in`必须能被`num_heads`整除"
             head_dim = d_in // num_heads
 
         self.head_dim = head_dim
@@ -174,23 +174,23 @@ class GroupedQueryAttention(nn.Module):
     def forward(self, x, mask, cos, sin, use_cache=False, start_pos=0, cache=None):
         b, num_tokens, _ = x.shape
 
-        # Apply projections
+        # 应用投影
         queries = self.W_query(x)  # (b, num_tokens, num_heads * head_dim)
         keys = self.W_key(x)       # (b, num_tokens, num_kv_groups * head_dim)
         values = self.W_value(x)   # (b, num_tokens, num_kv_groups * head_dim)
 
-        # Reshape
+        # 重塑形状
         queries = queries.view(b, num_tokens, self.num_heads, self.head_dim).transpose(1, 2)
         keys_new = keys.view(b, num_tokens, self.num_kv_groups, self.head_dim).transpose(1, 2)
         values_new = values.view(b, num_tokens, self.num_kv_groups, self.head_dim).transpose(1, 2)
 
-        # Optional normalization
+        # 可选的归一化
         if self.q_norm:
             queries = self.q_norm(queries)
         if self.k_norm:
             keys_new = self.k_norm(keys_new)
 
-        # Apply RoPE
+        # 应用RoPE
         queries = apply_rope(queries, cos, sin, offset=start_pos)
         keys_new = apply_rope(keys_new, cos, sin, offset=start_pos)
 
@@ -207,11 +207,11 @@ class GroupedQueryAttention(nn.Module):
             keys, values = keys_new, values_new
             next_cache = None
 
-        # Expand K and V to match number of heads
+        # 扩展K和V以匹配头的数量
         keys = keys.repeat_interleave(self.group_size, dim=1)
         values = values.repeat_interleave(self.group_size, dim=1)
 
-        # Attention
+        # 注意力计算
         attn_scores = queries @ keys.transpose(2, 3)
         attn_scores = attn_scores.masked_fill(mask, -torch.inf)
         attn_weights = torch.softmax(attn_scores / self.head_dim**0.5, dim=-1)
@@ -221,21 +221,21 @@ class GroupedQueryAttention(nn.Module):
 
 
 def compute_rope_params(head_dim, theta_base=10_000, context_length=4096, dtype=torch.float32):
-    assert head_dim % 2 == 0, "Embedding dimension must be even"
+    assert head_dim % 2 == 0, "嵌入维度必须是偶数"
 
-    # Compute the inverse frequencies
+    # 计算逆频率
     inv_freq = 1.0 / (theta_base ** (torch.arange(0, head_dim, 2, dtype=dtype)[: (head_dim // 2)].float() / head_dim))
 
-    # Generate position indices
+    # 生成位置索引
     positions = torch.arange(context_length, dtype=dtype)
 
-    # Compute the angles
-    angles = positions[:, None] * inv_freq[None, :]  # Shape: (context_length, head_dim // 2)
+    # 计算角度
+    angles = positions[:, None] * inv_freq[None, :]  # 形状: (context_length, head_dim // 2)
 
-    # Expand angles to match the head_dim
-    angles = torch.cat([angles, angles], dim=1)  # Shape: (context_length, head_dim)
+    # 扩展角度以匹配head_dim
+    angles = torch.cat([angles, angles], dim=1)  # 形状: (context_length, head_dim)
 
-    # Precompute sine and cosine
+    # 预计算正弦和余弦
     cos = torch.cos(angles)
     sin = torch.sin(angles)
 
@@ -245,21 +245,21 @@ def compute_rope_params(head_dim, theta_base=10_000, context_length=4096, dtype=
 def apply_rope(x, cos, sin, offset=0):
     # x: (batch_size, num_heads, seq_len, head_dim)
     batch_size, num_heads, seq_len, head_dim = x.shape
-    assert head_dim % 2 == 0, "Head dimension must be even"
+    assert head_dim % 2 == 0, "头维度必须是偶数"
 
-    # Split x into first half and second half
-    x1 = x[..., : head_dim // 2]  # First half
-    x2 = x[..., head_dim // 2:]  # Second half
+    # 将x分割为前半部分和后半部分
+    x1 = x[..., : head_dim // 2]  # 前半部分
+    x2 = x[..., head_dim // 2:]  # 后半部分
 
-    # Adjust sin and cos shapes
-    cos = cos[offset:offset + seq_len, :].unsqueeze(0).unsqueeze(0)  # Shape: (1, 1, seq_len, head_dim)
+    # 调整sin和cos的形状
+    cos = cos[offset:offset + seq_len, :].unsqueeze(0).unsqueeze(0)  # 形状: (1, 1, seq_len, head_dim)
     sin = sin[offset:offset + seq_len, :].unsqueeze(0).unsqueeze(0)
 
-    # Apply the rotary transformation
+    # 应用旋转变换
     rotated = torch.cat((-x2, x1), dim=-1)
     x_rotated = (x * cos) + (rotated * sin)
 
-    # It's ok to use lower-precision after applying cos and sin rotation
+    # 在应用cos和sin旋转后使用较低精度是可以的
     return x_rotated.to(dtype=x.dtype)
 
 
@@ -290,7 +290,7 @@ class RMSNorm(nn.Module):
 def load_weights_into_qwen(model, param_config, params):
     def assign(left, right, tensor_name="unknown"):
         if left.shape != right.shape:
-            raise ValueError(f"Shape mismatch in tensor '{tensor_name}'. Left: {left.shape}, Right: {right.shape}")
+            raise ValueError(f"张量'{tensor_name}'的形状不匹配。左侧: {left.shape}, 右侧: {right.shape}")
         return torch.nn.Parameter(right.clone().detach() if isinstance(right, torch.Tensor) else torch.tensor(right))
 
     model.tok_emb.weight = assign(model.tok_emb.weight, params["model.embed_tokens.weight"], "model.embed_tokens.weight")
@@ -299,7 +299,7 @@ def load_weights_into_qwen(model, param_config, params):
         block = model.trf_blocks[l]
         att = block.att
 
-        # Q, K, V projections
+        # Q, K, V 投影
         att.W_query.weight = assign(
             att.W_query.weight,
             params[f"model.layers.{l}.self_attn.q_proj.weight"],
@@ -316,14 +316,14 @@ def load_weights_into_qwen(model, param_config, params):
             f"model.layers.{l}.self_attn.v_proj.weight"
         )
 
-        # Output projection
+        # 输出投影
         att.out_proj.weight = assign(
             att.out_proj.weight,
             params[f"model.layers.{l}.self_attn.o_proj.weight"],
             f"model.layers.{l}.self_attn.o_proj.weight"
         )
 
-        # QK norms
+        # QK 归一化
         if hasattr(att, "q_norm") and att.q_norm is not None:
             att.q_norm.scale = assign(
                 att.q_norm.scale,
@@ -337,14 +337,14 @@ def load_weights_into_qwen(model, param_config, params):
                 f"model.layers.{l}.self_attn.k_norm.weight"
             )
 
-        # Attention layernorm
+        # 注意力层归一化
         block.norm1.scale = assign(
             block.norm1.scale,
             params[f"model.layers.{l}.input_layernorm.weight"],
             f"model.layers.{l}.input_layernorm.weight"
         )
 
-        # Feedforward weights
+        # 前馈网络权重
         block.ff.fc1.weight = assign(
             block.ff.fc1.weight,
             params[f"model.layers.{l}.mlp.gate_proj.weight"],
@@ -366,10 +366,10 @@ def load_weights_into_qwen(model, param_config, params):
             f"model.layers.{l}.post_attention_layernorm.weight"
         )
 
-    # Final normalization and output head
+    # 最终归一化和输出头
     model.final_norm.scale = assign(model.final_norm.scale, params["model.norm.weight"], "model.norm.weight")
 
-    # Model uses weight tying, hence we reuse the embedding layer weights here
+    # 模型使用权重共享，因此我们在这里重用嵌入层权重
     model.out_head.weight = assign(model.out_head.weight, params["model.embed_tokens.weight"], "model.embed_tokens.weight")
 
 
@@ -381,7 +381,7 @@ class Qwen3Tokenizer():
 
         if add_generation_prompt != add_thinking:
             raise ValueError(
-                "Only add_generation_prompt==add_thinking settings are currently supported"
+                "目前只支持add_generation_prompt==add_thinking的设置"
             )
 
         self.add_generation_prompt = add_generation_prompt
@@ -429,6 +429,6 @@ def download_from_huggingface(repo_id, filename, local_dir, revision="main"):
     url = f"{base_url}/{repo_id}/resolve/{revision}/{filename}"
     Path(local_dir).mkdir(parents=True, exist_ok=True)
     dest_path = os.path.join(local_dir, filename)
-    print(f"Downloading {url} to {dest_path}...")
+    print(f"正在下载 {url} 到 {dest_path}...")
     urllib.request.urlretrieve(url, dest_path)
     return dest_path
